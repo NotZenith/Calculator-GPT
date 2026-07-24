@@ -75,3 +75,4 @@ GEMINI_API_KEY
 
 
 \n## Roadmap\n\n- [ ] **Voice Support:** Add a microphone and speech-to-text integration.\n- [ ] **Custom Skins:** Different UI themes for the OLED display.\n- [ ] **Game Mode:** Port simple games like Snake or Tetris to the OLED.\n- [ ] **Web Dashboard:** Remote configuration via a local web server.
+\n<!-- Contribution milestone 1 -->
