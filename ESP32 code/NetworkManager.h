@@ -15,6 +15,12 @@ public:
     void connect(const char* ssid, const char* password);
     void connectToSaved();
 
+    // Settings persistence
+    void saveAISettings(const String& apiKey, const String& endpoint, const String& model);
+    String getAIKey() { return _prefs.getString("ai_key", AI_API_KEY); }
+    String getAIEndpoint() { return _prefs.getString("ai_url", AI_ENDPOINT_URL); }
+    String getAIModel() { return _prefs.getString("ai_model", AI_MODEL_NAME); }
+
     // Scan logic
     int scanNetworks();
     String getSSID(int index) { return WiFi.SSID(index); }

@@ -32,6 +32,12 @@ void NetworkManager::connectToSaved() {
     }
 }
 
+void NetworkManager::saveAISettings(const String& apiKey, const String& endpoint, const String& model) {
+    _prefs.putString("ai_key", apiKey);
+    _prefs.putString("ai_url", endpoint);
+    _prefs.putString("ai_model", model);
+}
+
 int NetworkManager::scanNetworks() {
     WiFi.disconnect();
     return WiFi.scanNetworks();
