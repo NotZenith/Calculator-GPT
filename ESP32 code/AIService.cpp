@@ -5,10 +5,15 @@ AIService::AIService() {}
 String AIService::ask(const String& prompt) {
     if (WiFi.status() != WL_CONNECTED) return "Error: No WiFi";
 
+    // Wake up the HTTP client
     HTTPClient http;
     http.begin(AI_ENDPOINT_URL);
+
+    // Set headers for standard OpenAI-compatible auth
     http.addHeader("Content-Type", "application/json");
     http.addHeader("Authorization", String("Bearer ") + AI_API_KEY);
+
+    // Set a reasonable timeout for LLM responses
     http.setTimeout(AI_TIMEOUT_MS);
 
     String payload = buildJsonPayload(prompt);
