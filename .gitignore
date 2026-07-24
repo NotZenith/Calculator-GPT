@@ -1,0 +1,13 @@
+# Arduino/ESP32
+/build/
+*.pyc
+.DS_Store
+
+# IDE
+.idea/
+*.iml
+*.iws
+
+# Artifacts/Temp
+.artifacts/
+/home/notzenith/.var/app/com.google.AndroidStudio/cache/
