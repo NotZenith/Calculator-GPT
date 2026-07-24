@@ -1,0 +1,1 @@
+name: Bug Report\ndescription: File a bug report\ntitle: '[BUG] '\nlabels: ['bug']\nbody:\n  - type: markdown\n    attributes:\n      value: | \n        Thanks for reporting!\n  - type: textarea\n    attributes:\n      label: Description\n      description: Tell us what happened.\n    validations:\n      required: true
