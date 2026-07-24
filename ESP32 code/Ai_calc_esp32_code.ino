@@ -3,7 +3,7 @@
  * @brief Professional AI Calculator Main Orchestrator
  *
  * Reorganized for ESP32-S3 N16R8.
- * Features: Generic AI Service, Multi-layer Keyboard, Battery Monitoring.
+ * Features: Generic AI Service, Multi-layer Keyboard, Battery Monitoring, Interactive WiFi.
  */
 
 #include "Config.h"
@@ -24,46 +24,36 @@ AIService       ai;
 CalculatorEngine calc;
 
 // Application State
-enum AppMode { MODE_LOCAL, MODE_AI, MODE_WIFI_SCAN };
+enum AppMode { MODE_LOCAL, MODE_AI, MODE_WIFI_SCAN, MODE_WIFI_PWD };
 AppMode currentMode = MODE_LOCAL;
 String  inputBuffer = "";
-String  lastResult  = "";
-bool    isProcessing = false;
+String  wifiSsid    = "";
+int     selectedWifi = 0;
+int     numNetworks  = 0;
 
 void setup() {
     Serial.begin(115200);
     
-    // Initialize Hardware
     Wire.begin(I2C_SDA, I2C_SCL);
     display.begin();
     keyboard.begin();
     battery.begin();
     network.begin();
-    
-    display.showStatus("Waking up...");
-    
-    // Connect to WiFi
-    network.connectToSaved();
 
-    if (network.isConnected()) {
-        display.showStatus("WiFi Connected!");
-    } else {
-        display.showStatus("WiFi Disconnected\nPress SCAN to fix.");
-    }
+    display.showStatus("Calculator-GPT booting...");
+    network.connectToSaved();
 
     delay(1000);
     refreshUI();
 }
 
 void loop() {
-    // 1. Background Tasks
     static unsigned long lastBatteryCheck = 0;
-    if (millis() - lastBatteryCheck > 30000) { // Every 30s
+    if (millis() - lastBatteryCheck > 60000) {
         battery.update();
         lastBatteryCheck = millis();
     }
 
-    // 2. Input Handling
     String key = keyboard.scan();
     if (key != "") {
         handleInput(key);
@@ -71,7 +61,18 @@ void loop() {
 }
 
 void handleInput(String key) {
-    // Functional Keys
+    // Mode-specific handling
+    if (currentMode == MODE_WIFI_SCAN) {
+        handleWiFiScanInput(key);
+        return;
+    }
+
+    if (currentMode == MODE_WIFI_PWD) {
+        handleWiFiPwdInput(key);
+        return;
+    }
+
+    // Main App Functional Keys
     if (key == KEY_MODE) {
         currentMode = (currentMode == MODE_LOCAL) ? MODE_AI : MODE_LOCAL;
         inputBuffer = "";
@@ -79,14 +80,14 @@ void handleInput(String key) {
         return;
     }
 
-    if (key == KEY_SHIFT || key == KEY_LAYER) {
-        keyboard.handleSpecialKeys(key);
-        refreshUI();
+    if (key == KEY_SCAN) {
+        startWiFiScan();
         return;
     }
 
-    if (key == KEY_SCAN) {
-        startWiFiScan();
+    if (key == KEY_SHIFT || key == KEY_LAYER) {
+        keyboard.handleSpecialKeys(key);
+        refreshUI();
         return;
     }
 
@@ -97,87 +98,91 @@ void handleInput(String key) {
         return;
     }
 
-    if (key == KEY_UP) {
-        display.scrollUp();
-        return;
-    }
-    
-    if (key == KEY_DOWN) {
-        display.scrollDown();
-        return;
-    }
-
-    if (key == KEY_CLEAR) {
-        inputBuffer = "";
-        refreshUI();
-        return;
-    }
-
-    if (key == KEY_ZOOM_IN) {
-        static int zoom = 1;
-        zoom = min(3, zoom + 1);
-        display.setZoom(zoom);
-        return;
-    }
-
-    if (key == KEY_ZOOM_OUT) {
-        static int zoom = 1;
-        zoom = max(1, zoom - 1);
-        display.setZoom(zoom);
-        return;
-    }
+    if (key == KEY_UP) { display.scrollUp(); return; }
+    if (key == KEY_DOWN) { display.scrollDown(); return; }
+    if (key == KEY_CLEAR) { inputBuffer = ""; refreshUI(); return; }
 
     // Text/Action Keys
     if (key == KEY_BACKSPACE) {
-        if (inputBuffer.length() > 0) {
-            inputBuffer.remove(inputBuffer.length() - 1);
-        }
+        if (inputBuffer.length() > 0) inputBuffer.remove(inputBuffer.length() - 1);
     } else if (key == KEY_ENTER) {
         processAction();
     } else {
-        // Normal character entry
-        if (inputBuffer.length() < INPUT_BUFFER_SIZE) {
-            inputBuffer += key;
-        }
+        if (inputBuffer.length() < INPUT_BUFFER_SIZE) inputBuffer += key;
     }
-
+    
     refreshUI();
 }
 
-void processAction() {
-    if (inputBuffer.length() == 0) return;
+void handleWiFiScanInput(String key) {
+    if (key == KEY_UP) {
+        selectedWifi = max(0, selectedWifi - 1);
+    } else if (key == KEY_DOWN) {
+        selectedWifi = min(numNetworks - 1, selectedWifi + 1);
+    } else if (key == KEY_ENTER) {
+        wifiSsid = network.getSSID(selectedWifi);
+        inputBuffer = "";
+        currentMode = MODE_WIFI_PWD;
+    } else if (key == KEY_CLEAR) {
+        currentMode = MODE_LOCAL;
+    }
 
-    display.showStatus("Thinking...");
-
-    if (currentMode == MODE_AI) {
-        String response = ai.ask(inputBuffer);
-        display.setText(response);
-        // Wait for user to read or scroll
-        return;
+    if (currentMode == MODE_WIFI_SCAN) {
+        String ssids[20];
+        for(int i=0; i<min(numNetworks, 20); i++) ssids[i] = network.getSSID(i);
+        display.showMenu("Select WiFi:", ssids, min(numNetworks, 20), selectedWifi);
     } else {
-        String result = calc.evaluate(inputBuffer);
-        display.setText(result);
-        return;
+        refreshUI();
+    }
+}
+
+void handleWiFiPwdInput(String key) {
+    if (key == KEY_ENTER) {
+        display.showStatus("Connecting...");
+        network.connect(wifiSsid.c_str(), inputBuffer.c_str());
+        currentMode = MODE_LOCAL;
+        inputBuffer = "";
+    } else if (key == KEY_BACKSPACE) {
+        if (inputBuffer.length() > 0) inputBuffer.remove(inputBuffer.length() - 1);
+    } else if (key == KEY_CLEAR) {
+        currentMode = MODE_WIFI_SCAN;
+        inputBuffer = "";
+    } else if (key != KEY_SHIFT && key != KEY_LAYER && key != KEY_MODE) {
+        inputBuffer += key;
+    }
+
+    if (currentMode == MODE_WIFI_PWD) {
+        display.showPasswordInput("Password:", inputBuffer, !keyboard.isShiftActive());
+    } else {
+        refreshUI();
     }
 }
 
 void startWiFiScan() {
-    display.showStatus("Scanning WiFi...");
-    int n = network.scanNetworks();
-    if (n == 0) {
-        display.showStatus("No networks found");
+    display.showStatus("Scanning...");
+    numNetworks = network.scanNetworks();
+    selectedWifi = 0;
+    currentMode = MODE_WIFI_SCAN;
+    handleWiFiScanInput(""); // Initial render
+}
+
+void processAction() {
+    if (inputBuffer.length() == 0) return;
+    display.showStatus("Please wait...");
+
+    if (currentMode == MODE_AI) {
+        String response = ai.ask(inputBuffer);
+        display.setText(response);
     } else {
-        display.showStatus(String(n) + " found. Check Serial.");
-        // Professional implementation would show a list on OLED
+        String result = calc.evaluate(inputBuffer);
+        display.setText("Result:\n" + result);
     }
-    delay(2000);
-    refreshUI();
 }
 
 void refreshUI() {
     String header = (currentMode == MODE_AI) ? "[AI MODE]" : "[CALC MODE]";
-    if (keyboard.isShiftActive()) header += " (ABC)";
-    if (keyboard.isSymbolLayer()) header += " (#&)";
+    if (keyboard.isShiftActive()) header += " ^";
+    if (keyboard.isSymbolLayer()) header += " #";
 
     display.setText(header + "\n" + inputBuffer);
 }
