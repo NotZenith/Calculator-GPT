@@ -126,3 +126,34 @@ void DisplayManager::showWiFiProgress(const String& ssid) {
     _display.println(ssid);
     _display.display();
 }
+
+void DisplayManager::showMenu(const String& title, const String items[], int count, int selectedIndex) {
+    _display.clearDisplay();
+    _display.setTextSize(1);
+    _display.setCursor(0, 0);
+    _display.println(title);
+
+    int startIdx = max(0, selectedIndex - 1);
+    for (int i = startIdx; i < min(startIdx + 2, count); i++) {
+        _display.print(i == selectedIndex ? "> " : "  ");
+        _display.println(items[i]);
+    }
+    _display.display();
+}
+
+void DisplayManager::showPasswordInput(const String& title, const String& currentInput, bool masked) {
+    _display.clearDisplay();
+    _display.setTextSize(1);
+    _display.setCursor(0, 0);
+    _display.println(title);
+
+    String displayStr = "";
+    if (masked) {
+        for (int i = 0; i < currentInput.length(); i++) displayStr += "*";
+    } else {
+        displayStr = currentInput;
+    }
+
+    _display.println(displayStr + "_");
+    _display.display();
+}

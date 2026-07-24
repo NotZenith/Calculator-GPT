@@ -25,6 +25,10 @@ public:
     void showBattery(int percent, float voltage, bool isLow);
     void showWiFiProgress(const String& ssid);
 
+    // Interactive UI
+    void showMenu(const String& title, const String items[], int count, int selectedIndex);
+    void showPasswordInput(const String& title, const String& currentInput, bool masked = true);
+
 private:
     Adafruit_SSD1306 _display;
     String _buffer;
