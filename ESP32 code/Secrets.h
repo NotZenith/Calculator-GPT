@@ -9,6 +9,7 @@
  */
 
 // WiFi Configuration
+// Note: If you use the on-device setup, these defaults will be overridden.
 #define DEFAULT_WIFI_SSID     "Your_SSID"
 #define DEFAULT_WIFI_PASSWORD "Your_Password"
 
