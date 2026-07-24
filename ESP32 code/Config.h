@@ -52,3 +52,4 @@ const uint8_t COL_PINS[9] = {8, 9, 10, 11, 12, 13, 14, 15, 6};
 // Update 7
 // Update 8
 // Update 9
+// Update 10
