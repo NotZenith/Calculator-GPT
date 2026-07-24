@@ -74,3 +74,4 @@ GEMINI_API_KEY
 5. select the com port for the esp32 then upload the code to the esp32.
 
 
+\n## Roadmap\n\n- [ ] **Voice Support:** Add a microphone and speech-to-text integration.\n- [ ] **Custom Skins:** Different UI themes for the OLED display.\n- [ ] **Game Mode:** Port simple games like Snake or Tetris to the OLED.\n- [ ] **Web Dashboard:** Remote configuration via a local web server.
