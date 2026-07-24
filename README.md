@@ -1,6 +1,8 @@
-# AI Telegram Calculator (ESP32)
+# Calculator-GPT (ESP32)
 
-Turn a regular scientific calculator into a **WiFi-connected AI device** that can send and receive Telegram messages and interact with an AI model.
+**Credit to: Zenith**
+
+Turn a regular scientific calculator into a **WiFi-connected AI device** that can interact with any OpenAI-compatible AI provider.
 
 This project embeds an **ESP32 microcontroller** inside a calculator and adds an **OLED display**, **I/O expansion**, and **battery monitoring** to create a small IoT system.
 
@@ -10,27 +12,25 @@ From the outside it still looks like a normal calculator — but internally it b
 
 ## Features
 
-- Send messages from the calculator to Telegram
-- Receive Telegram messages on the calculator
-- Display messages on an OLED screen
-- Query an AI model (Google Gemini)
-- Battery voltage monitoring
-- WiFi connectivity
-- Open-source firmware
+- **Multi-layer Keyboard:** Type letters (lower/upper) and symbols using the original keypad.
+- **AI-Powered:** Query any AI provider (Gemini, OpenAI, Groq, etc.) via an OpenAI-compatible API.
+- **Display Responses:** Read long AI responses on a dedicated OLED screen with scrolling support.
+- **Local Calculator Mode:** Works as a normal calculator for simple math.
+- **Battery Monitoring:** Real-time voltage monitoring and low-battery alerts.
+- **Modular Codebase:** Professional, object-oriented C++ structure for easy maintenance.
 
 ---
 
 ## Hardware Components
 
-- ESP32
+- ESP32-S3 (N16R8 recommended)
 - MCP23017 I/O Expander
-- SSD1306 OLED Display
+- SSD1306 OLED Display (128x32)
 - AMS1117 3.3V Voltage Regulator
 - LiPo Battery
-- Voltage Divider (battery monitoring)
+- Voltage Divider (for battery monitoring)
 - Power Switch
-- Casio Calculator
-- Wires
+- Casio Calculator Keypad
 
 ---
 
