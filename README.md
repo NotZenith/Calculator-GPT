@@ -74,7 +74,19 @@ GEMINI_API_KEY
 5. select the com port for the esp32 then upload the code to the esp32.
 
 
-\n## Roadmap\n\n- [ ] **Voice Support:** Add a microphone and speech-to-text integration.\n- [ ] **Custom Skins:** Different UI themes for the OLED display.\n- [ ] **Game Mode:** Port simple games like Snake or Tetris to the OLED.\n- [ ] **Web Dashboard:** Remote configuration via a local web server.
-\n<!-- Contribution milestone 1 -->
-\n<!-- Contribution milestone 2 -->
-\n<!-- Developer Note: This project is AI-assisted -->
+\n## Roadmap\n\n- [ ] **Voice Support:** Add a microphone and speech-to-text integration.
+- [ ] **Custom Skins:** Different UI themes for the OLED display.
+- [ ] **Game Mode:** Port simple games for a fun offline experience.
+
+---
+
+## Quick Notes
+
+- Use a stable 3.3V supply before flashing or powering the board.
+- Keep API keys private and never commit them to the repository.
+- If the OLED stays blank, verify I2C wiring and device address first.
+- If uploads fail, re-check boot mode wiring and the selected serial port.
+
+<!-- Contribution milestone 1 -->
+<!-- Contribution milestone 2 -->
+<!-- Developer Note: This project is AI-assisted -->
