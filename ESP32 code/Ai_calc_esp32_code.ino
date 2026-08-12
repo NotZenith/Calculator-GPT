@@ -24,12 +24,16 @@ AIService       ai;
 CalculatorEngine calc;
 
 // Application State
-enum AppMode { MODE_LOCAL, MODE_AI, MODE_WIFI_SCAN, MODE_WIFI_PWD };
+enum AppMode { MODE_LOCAL, MODE_AI, MODE_WIFI_SCAN, MODE_WIFI_PWD, MODE_MODEL_SELECT };
 AppMode currentMode = MODE_LOCAL;
 String  inputBuffer = "";
 String  wifiSsid    = "";
 int     selectedWifi = 0;
+int     selectedModel = 0;
 int     numNetworks  = 0;
+
+const char* AI_MODELS[] = {"GPT-4o Mini", "Gemini 1.5", "Claude 3.5"};
+const int TOTAL_MODELS = 3;
 
 void setup() {
     Serial.begin(115200);
@@ -61,6 +65,17 @@ void loop() {
 }
 
 void handleInput(String key) {
+    // Stealth Mode Toggle (SHIFT + BATTERY)
+    if (key == KEY_BATTERY && keyboard.isShiftActive()) {
+        display.setStealth(!display.isStealth());
+        return;
+    }
+
+    // Don't process other keys if in stealth (except to wake up)
+    if (display.isStealth()) {
+        return;
+    }
+
     // Mode-specific handling
     if (currentMode == MODE_WIFI_SCAN) {
         handleWiFiScanInput(key);
@@ -72,9 +87,18 @@ void handleInput(String key) {
         return;
     }
 
+    if (currentMode == MODE_MODEL_SELECT) {
+        handleModelSelectInput(key);
+        return;
+    }
+
     // Main App Functional Keys
     if (key == KEY_MODE) {
-        currentMode = (currentMode == MODE_LOCAL) ? MODE_AI : MODE_LOCAL;
+        if (keyboard.isShiftActive()) {
+            currentMode = MODE_MODEL_SELECT;
+        } else {
+            currentMode = (currentMode == MODE_LOCAL) ? MODE_AI : MODE_LOCAL;
+        }
         inputBuffer = "";
         refreshUI();
         return;
@@ -100,6 +124,8 @@ void handleInput(String key) {
 
     if (key == KEY_UP) { display.scrollUp(); return; }
     if (key == KEY_DOWN) { display.scrollDown(); return; }
+    if (key == KEY_ZOOM_IN) { display.setZoom(display.getZoom() + 1); return; }
+    if (key == KEY_ZOOM_OUT) { display.setZoom(display.getZoom() - 1); return; }
     if (key == KEY_CLEAR) { inputBuffer = ""; refreshUI(); return; }
 
     // Text/Action Keys
@@ -136,6 +162,27 @@ void handleWiFiScanInput(String key) {
     }
 }
 
+void handleModelSelectInput(String key) {
+    if (key == KEY_UP) {
+        selectedModel = max(0, selectedModel - 1);
+    } else if (key == KEY_DOWN) {
+        selectedModel = min(TOTAL_MODELS - 1, selectedModel + 1);
+    } else if (key == KEY_ENTER) {
+        ai.setModel(selectedModel);
+        currentMode = MODE_AI;
+    } else if (key == KEY_CLEAR || key == KEY_MODE) {
+        currentMode = MODE_AI;
+    }
+
+    if (currentMode == MODE_MODEL_SELECT) {
+        String modelNames[TOTAL_MODELS];
+        for(int i=0; i<TOTAL_MODELS; i++) modelNames[i] = String(AI_MODELS[i]);
+        display.showMenu("Select Model:", modelNames, TOTAL_MODELS, selectedModel);
+    } else {
+        refreshUI();
+    }
+}
+
 void handleWiFiPwdInput(String key) {
     if (key == KEY_ENTER) {
         display.showStatus("Connecting...");
@@ -163,7 +210,7 @@ void startWiFiScan() {
     numNetworks = network.scanNetworks();
     selectedWifi = 0;
     currentMode = MODE_WIFI_SCAN;
-    handleWiFiScanInput(""); // Initial render
+    handleWiFiScanInput(""); 
 }
 
 void processAction() {
@@ -180,7 +227,7 @@ void processAction() {
 }
 
 void refreshUI() {
-    String header = (currentMode == MODE_AI) ? "[AI MODE]" : "[CALC MODE]";
+    String header = (currentMode == MODE_AI) ? "[" + ai.getModelName() + "]" : "[CALC MODE]";
     if (keyboard.isShiftActive()) header += " ^";
     if (keyboard.isSymbolLayer()) header += " #";
 

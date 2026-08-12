@@ -19,6 +19,7 @@ public:
     void scrollUp();
     void scrollDown();
     void setZoom(int level);
+    int getZoom() const { return _zoomLevel; }
 
     // UI Feedback
     void showStatus(const String& status, int durationMs = 1000);
@@ -29,11 +30,16 @@ public:
     void showMenu(const String& title, const String items[], int count, int selectedIndex);
     void showPasswordInput(const String& title, const String& currentInput, bool masked = true);
 
+    // Stealth Mode
+    void setStealth(bool enabled);
+    bool isStealth() const { return _stealth; }
+
 private:
     Adafruit_SSD1306 _display;
     String _buffer;
     int _scrollIndex;
     int _zoomLevel;
+    bool _stealth;
 
     void renderLines();
 };

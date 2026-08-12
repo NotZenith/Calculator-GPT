@@ -2,7 +2,7 @@
 
 DisplayManager::DisplayManager()
     : _display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, SCREEN_RESET),
-      _buffer(""), _scrollIndex(0), _zoomLevel(1) {}
+      _buffer(""), _scrollIndex(0), _zoomLevel(1), _stealth(false) {}
 
 void DisplayManager::begin() {
     if (!_display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR)) {
@@ -49,6 +49,11 @@ void DisplayManager::scrollDown() {
 }
 
 void DisplayManager::update() {
+    if (_stealth) {
+        _display.clearDisplay();
+        _display.display();
+        return;
+    }
     _display.clearDisplay();
     _display.setTextSize(_zoomLevel);
     _display.setCursor(0, 0);
@@ -58,6 +63,11 @@ void DisplayManager::update() {
     renderLines();
 
     _display.display();
+}
+
+void DisplayManager::setStealth(bool enabled) {
+    _stealth = enabled;
+    update();
 }
 
 void DisplayManager::renderLines() {

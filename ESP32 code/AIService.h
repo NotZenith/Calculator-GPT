@@ -14,7 +14,11 @@ public:
     // This is non-blocking in the sense that it uses timeouts efficiently
     String ask(const String& prompt);
 
+    void setModel(int index);
+    String getModelName() const;
+
 private:
+    int _currentModelIdx;
     String buildJsonPayload(const String& prompt);
     String parseResponse(const String& payload);
 };

@@ -1,8 +1,21 @@
 #include "AIService.h"
 
-AIService::AIService() {}
+AIService::AIService() : _currentModelIdx(0) {}
 
-String AIService::ask(const String& prompt) {
+const char* MODELS[] = {"gpt-4o-mini", "gemini-1.5-flash", "claude-3-haiku"};
+const int MODEL_COUNT = 3;
+
+void AIService::setModel(int index) {
+    _currentModelIdx = index % MODEL_COUNT;
+}
+
+String AIService::getModelName() const {
+    return MODELS[_currentModelIdx];
+}
+
+String AIService::buildJsonPayload(const String& prompt) {
+    DynamicJsonDocument doc(JSON_DOC_SIZE);
+    doc["model"] = MODELS[_currentModelIdx];
     if (WiFi.status() != WL_CONNECTED) return "Error: No WiFi";
 
     // Wake up the HTTP client
@@ -37,7 +50,7 @@ String AIService::ask(const String& prompt) {
 
 String AIService::buildJsonPayload(const String& prompt) {
     DynamicJsonDocument doc(JSON_DOC_SIZE);
-    doc["model"] = AI_MODEL_NAME;
+    doc["model"] = MODELS[_currentModelIdx];
 
     JsonArray messages = doc.createNestedArray("messages");
 
