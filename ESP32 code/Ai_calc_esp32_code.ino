@@ -274,9 +274,15 @@ void processAction() {
 }
 
 void refreshUI() {
-    String header = (currentMode == MODE_AI) ? "[" + ai.getModelName() + "]" : "[CALC MODE]";
-    if (keyboard.isShiftActive()) header += " ^";
-    if (keyboard.isSymbolLayer()) header += " #";
+    String header = "";
+    if (currentMode == MODE_AI) {
+        header = "AI:" + ai.getModelName();
+    } else {
+        header = "CALC:Local";
+    }
+
+    if (keyboard.isShiftActive()) header += " [S]";
+    if (keyboard.isSymbolLayer()) header += " [Y]";
 
     display.setText(header + "\n" + inputBuffer);
 }
