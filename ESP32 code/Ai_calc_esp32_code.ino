@@ -40,6 +40,9 @@ const int TOTAL_MODELS = 3;
 void setup() {
     Serial.begin(115200);
     
+    pinMode(STATUS_LED_PIN, OUTPUT);
+    digitalWrite(STATUS_LED_PIN, HIGH); // On during boot
+
     prefs.begin("calc-gpt", false);
     selectedModel = prefs.getInt("model", 0);
     int savedZoom = prefs.getInt("zoom", 1);
@@ -263,6 +266,7 @@ void showSystemInfo() {
 void processAction() {
     if (inputBuffer.length() == 0) return;
     display.showStatus("Please wait...");
+    digitalWrite(STATUS_LED_PIN, HIGH); // LED on during AI query
 
     if (currentMode == MODE_AI) {
         String response = ai.ask(inputBuffer);
@@ -271,6 +275,7 @@ void processAction() {
         String result = calc.evaluate(inputBuffer);
         display.setText("Result:\n" + result);
     }
+    digitalWrite(STATUS_LED_PIN, LOW); // LED off after finish
 }
 
 void refreshUI() {

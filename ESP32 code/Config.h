@@ -42,6 +42,9 @@ const uint8_t COL_PINS[9] = {8, 9, 10, 11, 12, 13, 14, 15, 6};
 #define INPUT_BUFFER_SIZE  1024
 #define JSON_DOC_SIZE      2048
 
+// System Hardware
+#define STATUS_LED_PIN     2 // Typical built-in LED pin for ESP32
+
 #endif // CONFIG_H
 // Update 1
 // Update 2
