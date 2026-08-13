@@ -16,6 +16,7 @@ public:
     // Text rendering
     void setText(const String& text);
     void appendText(const String& text);
+    void typewrite(const String& text, int speedMs = 30);
     void scrollUp();
     void scrollDown();
     void setZoom(int level);

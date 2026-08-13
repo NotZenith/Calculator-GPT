@@ -14,6 +14,7 @@
 #include "NetworkManager.h"
 #include "AIService.h"
 #include "CalculatorEngine.h"
+#include <Preferences.h>
 
 // System Instances
 DisplayManager  display;
@@ -22,9 +23,10 @@ BatteryManager  battery;
 NetworkManager  network;
 AIService       ai;
 CalculatorEngine calc;
+Preferences      prefs;
 
 // Application State
-enum AppMode { MODE_LOCAL, MODE_AI, MODE_WIFI_SCAN, MODE_WIFI_PWD, MODE_MODEL_SELECT };
+enum AppMode { MODE_LOCAL, MODE_AI, MODE_WIFI_SCAN, MODE_WIFI_PWD, MODE_MODEL_SELECT, MODE_SYSTEM_INFO };
 AppMode currentMode = MODE_LOCAL;
 String  inputBuffer = "";
 String  wifiSsid    = "";
@@ -38,11 +40,21 @@ const int TOTAL_MODELS = 3;
 void setup() {
     Serial.begin(115200);
     
+    prefs.begin("calc-gpt", false);
+    selectedModel = prefs.getInt("model", 0);
+    int savedZoom = prefs.getInt("zoom", 1);
+    bool savedStealth = prefs.getBool("stealth", false);
+
     Wire.begin(I2C_SDA, I2C_SCL);
     display.begin();
+    display.setZoom(savedZoom);
+    display.setStealth(savedStealth);
+
     keyboard.begin();
     battery.begin();
     network.begin();
+
+    ai.setModel(selectedModel);
 
     display.showStatus("Calculator-GPT booting...");
     network.connectToSaved();
@@ -52,10 +64,13 @@ void setup() {
 }
 
 void loop() {
-    static unsigned long lastBatteryCheck = 0;
-    if (millis() - lastBatteryCheck > 60000) {
+    static unsigned long lastCheck = 0;
+    if (millis() - lastCheck > 30000) {
         battery.update();
-        lastBatteryCheck = millis();
+        if (WiFi.status() != WL_CONNECTED && currentMode != MODE_WIFI_SCAN && currentMode != MODE_WIFI_PWD) {
+            network.connectToSaved();
+        }
+        lastCheck = millis();
     }
 
     String key = keyboard.scan();
@@ -67,7 +82,9 @@ void loop() {
 void handleInput(String key) {
     // Stealth Mode Toggle (SHIFT + BATTERY)
     if (key == KEY_BATTERY && keyboard.isShiftActive()) {
-        display.setStealth(!display.isStealth());
+        bool newStealth = !display.isStealth();
+        display.setStealth(newStealth);
+        prefs.putBool("stealth", newStealth);
         return;
     }
 
@@ -92,10 +109,20 @@ void handleInput(String key) {
         return;
     }
 
+    if (currentMode == MODE_SYSTEM_INFO) {
+        if (key == KEY_CLEAR || key == KEY_ENTER) {
+            currentMode = MODE_LOCAL;
+            refreshUI();
+        }
+        return;
+    }
+
     // Main App Functional Keys
     if (key == KEY_MODE) {
         if (keyboard.isShiftActive()) {
             currentMode = MODE_MODEL_SELECT;
+        } else if (keyboard.isSymbolLayer()) {
+            showSystemInfo();
         } else {
             currentMode = (currentMode == MODE_LOCAL) ? MODE_AI : MODE_LOCAL;
         }
@@ -124,8 +151,18 @@ void handleInput(String key) {
 
     if (key == KEY_UP) { display.scrollUp(); return; }
     if (key == KEY_DOWN) { display.scrollDown(); return; }
-    if (key == KEY_ZOOM_IN) { display.setZoom(display.getZoom() + 1); return; }
-    if (key == KEY_ZOOM_OUT) { display.setZoom(display.getZoom() - 1); return; }
+    if (key == KEY_ZOOM_IN) {
+        int z = min(3, display.getZoom() + 1);
+        display.setZoom(z);
+        prefs.putInt("zoom", z);
+        return;
+    }
+    if (key == KEY_ZOOM_OUT) {
+        int z = max(1, display.getZoom() - 1);
+        display.setZoom(z);
+        prefs.putInt("zoom", z);
+        return;
+    }
     if (key == KEY_CLEAR) { inputBuffer = ""; refreshUI(); return; }
 
     // Text/Action Keys
@@ -167,8 +204,9 @@ void handleModelSelectInput(String key) {
         selectedModel = max(0, selectedModel - 1);
     } else if (key == KEY_DOWN) {
         selectedModel = min(TOTAL_MODELS - 1, selectedModel + 1);
-    } else if (key == KEY_ENTER) {
+    } else    if (key == KEY_ENTER) {
         ai.setModel(selectedModel);
+        prefs.putInt("model", selectedModel);
         currentMode = MODE_AI;
     } else if (key == KEY_CLEAR || key == KEY_MODE) {
         currentMode = MODE_AI;
@@ -213,13 +251,22 @@ void startWiFiScan() {
     handleWiFiScanInput(""); 
 }
 
+void showSystemInfo() {
+    String info = "SYS INFO\n";
+    info += "IP: " + WiFi.localIP().toString() + "\n";
+    info += "RSSI: " + String(WiFi.RSSI()) + "dBm\n";
+    info += "Heap: " + String(ESP.getFreeHeap() / 1024) + "KB";
+    display.setText(info);
+    currentMode = MODE_SYSTEM_INFO;
+}
+
 void processAction() {
     if (inputBuffer.length() == 0) return;
     display.showStatus("Please wait...");
 
     if (currentMode == MODE_AI) {
         String response = ai.ask(inputBuffer);
-        display.setText(response);
+        display.typewrite(response);
     } else {
         String result = calc.evaluate(inputBuffer);
         display.setText("Result:\n" + result);

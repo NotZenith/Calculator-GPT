@@ -31,6 +31,18 @@ void DisplayManager::appendText(const String& text) {
     update();
 }
 
+void DisplayManager::typewrite(const String& text, int speedMs) {
+    _buffer = "";
+    _scrollIndex = 0;
+    for (int i = 0; i < text.length(); i++) {
+        _buffer += text[i];
+        update();
+        delay(speedMs);
+        // Quick break if a key is pressed?
+        // No, DisplayManager doesn't know about KeyboardManager
+    }
+}
+
 void DisplayManager::setZoom(int level) {
     _zoomLevel = constrain(level, 1, 3);
     update();
