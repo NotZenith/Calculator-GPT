@@ -137,7 +137,10 @@ void DisplayManager::showBattery(int percent, float voltage, bool isLow) {
     int fill = map(percent, 0, 100, 0, 38);
     _display.fillRect(11, 16, fill, 8, SSD1306_WHITE);
 
-    if (isLow) _display.println(F("\nLOW POWER!"));
+    if (isLow) {
+        _display.setCursor(0, 24);
+        _display.println(F("CRITICAL: LOW POWER"));
+    }
     _display.display();
 }
 
